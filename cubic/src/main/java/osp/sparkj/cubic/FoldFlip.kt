@@ -3,7 +3,9 @@ package osp.sparkj.cubic
 import android.annotation.SuppressLint
 import android.graphics.Camera
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.calculateTargetValue
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
@@ -207,7 +209,10 @@ fun FoldFlip(
             onDragEnd = {
                 scope.launch {
                     scrollOffset = if (animate.value > .5) screenHeight else 0F
-                    animate.animateTo(if (animate.value > .5) 1F else 0F)
+                    animate.animateTo(if (animate.value > .5) 1F else 0F, animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                    ))
+                    velocityTracker.resetTracking()
 //                    progress.animateTo(
 //                        (if (progress.value > .5) 1F else 0F),
 //                        animationSpec = spring(

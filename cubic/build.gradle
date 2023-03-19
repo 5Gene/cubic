@@ -49,7 +49,7 @@ android {
 }
 
 dependencies {
-    implementation 'ospl.sparkj.ui:cartoon:2023.03.19'
+    api 'osp.sparkj.ui:cartoon:2023.03.19'
     implementation platform('androidx.compose:compose-bom:2023.01.00')
     // Choose one of the following:
     // Material Design 3

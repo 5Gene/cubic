@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -17,7 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import osp.sparkj.cubic.FoldFlip
+import osp.sparkj.cubic.*
 import osp.sparkj.demo.ui.theme.CubicTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,7 +29,16 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
 //                    PreviewTouch3D()
-                    MiFloldflip()
+//                    Box(modifier = Modifier.padding(30.dp)) {
+//                        Box(
+//                            modifier = Modifier
+//                                .size(300.dp)
+//                                .touch3D()
+//                                .background(Color.Cyan)
+//                        )
+//                    }
+//                    MiFloldflip()
+                    TestBollLayout()
                 }
             }
         }
@@ -51,7 +61,7 @@ private fun MiFloldflip(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    color = Color.Black,
+                    color = Color.Magenta,
                     shape = RoundedCornerShape(16.dp)
                 )
         ) {

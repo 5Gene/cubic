@@ -10,11 +10,19 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutModifier
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
@@ -29,21 +37,59 @@ import kotlinx.coroutines.launch
 @Preview
 @Composable
 fun PreviewTouch3D() {
-    Box(
-        modifier = Modifier
-            .size(300.dp, 300.dp)
-            .background(color = Color.Blue)
-    ) {
-        Touch3D {
-            Box(
-                modifier = Modifier
-                    .size(300.dp, 300.dp)
-                    .background(Color.Red)
-            )
+    Box {
+        Box(
+            modifier = Modifier
+                .size(300.dp, 300.dp)
+                .background(color = Color.Blue)
+        ) {
+            Touch3D {
+                Box(
+                    modifier = Modifier
+                        .size(300.dp, 300.dp)
+                        .background(Color.Red)
+                )
+            }
         }
     }
 }
 
+fun Modifier.touch3D(deep: Float = 20F) = composed {
+
+    val animate = remember { Animatable(0F) }
+    val scope = rememberCoroutineScope()
+
+    var touchPointX by remember { mutableStateOf(0F) }
+    var touchPointY by remember { mutableStateOf(0F) }
+
+    pointerInput(Unit) {
+        forEachGesture {
+            awaitPointerEventScope {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                //按下后
+                if (!animate.isRunning) {
+                    touchPointX = (down.position.x - size.width / 2F) / (size.width / 2F)
+                    touchPointY = (size.height / 2F - down.position.y) / (size.height / 2F)
+                    scope.launch { animate.animateTo(1F) }
+                }
+                //拖动
+                drag(down.id) {
+                    it.consume()
+                    val x = it.position.x.coerceIn(0F, size.width.toFloat())
+                    touchPointX = (x - size.width / 2F) / (size.width / 2F)
+                    val y = it.position.y.coerceIn(0F, size.height.toFloat())
+                    touchPointY = (size.height / 2F - y) / (size.height / 2F)
+                }
+                //抬起
+                scope.launch { animate.animateTo(0F) }
+            }
+        }
+    }
+        .graphicsLayer {
+            rotationX = touchPointY * deep * animate.value
+            rotationY = touchPointX * deep * animate.value
+        }
+}
 
 @Composable
 fun Touch3D(deep: Float = 20F, content: @Composable () -> Unit) {
@@ -78,7 +124,6 @@ fun Touch3D(deep: Float = 20F, content: @Composable () -> Unit) {
                 }
             }
 
-            println("======= width:$width > height:$height")
             val rotateX = (touchPointX - width / 2) / (width / 2) * deep * animate.value
             val rotateY = (height / 2 - touchPointY) / (height / 2) * deep * animate.value
 
