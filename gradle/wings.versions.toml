@@ -1,11 +1,11 @@
 #https://github.com/terrakok/kmp-awesome
 
 [versions]
-cartoon = "0.1"
-cubic = "0.1"
-viewDsl = "0.1"
-adapter = "0.1"
-spark = "0.1"
+cartoon = "1.0"
+cubic = "1.0"
+viewDsl = "1.0"
+adapter = "1.0"
+spark = "1.0"
 conventions = "2.1.10"
 
 [libraries]
