@@ -124,6 +124,7 @@ internal fun Modifier.flipCard(
         }
     }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 internal fun FoldFlip(
     modifier: Modifier = Modifier,

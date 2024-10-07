@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     alias(vcl.plugins.gene.android)
+    alias(vcl.plugins.gene.compose)
 }
 
 android {
@@ -8,6 +9,5 @@ android {
 }
 
 dependencies {
-//    implementation 'osp.sparkj.ui:cartoon:2023.03.18'
     implementation project(path: ':cubic')
 }
