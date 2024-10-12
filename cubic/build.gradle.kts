@@ -1,3 +1,4 @@
+import wing.GroupIdMavenCentral
 import wing.publishMavenCentral
 
 plugins {
@@ -6,8 +7,8 @@ plugins {
     alias(vcl.plugins.compose.compiler)
 }
 
-group = "io.github.5gene"
-version = wings.versions.cubic.get()
+group = GroupIdMavenCentral
+version = wings.versions.gene.cubic.get()
 
 android {
     namespace = "osp.sparkj.cubic"
@@ -16,12 +17,12 @@ android {
 publishMavenCentral("cubic", withSource = true)
 
 dependencies {
-    implementation(wings.gene.cartoon)
-    implementation(wings.androidx.compose.ui)
-    implementation(wings.androidx.compose.ui.tooling)
-    implementation(wings.androidx.compose.ui.tooling.preview)
-    implementation(wings.androidx.compose.foundation)
-    implementation(wings.androidx.compose.material)
+    implementation(vcl.gene.cartoon)
+    implementation(vcl.androidx.compose.ui)
+    implementation(vcl.androidx.compose.ui.tooling)
+    implementation(vcl.androidx.compose.ui.tooling.preview)
+    implementation(vcl.androidx.compose.foundation)
+    implementation(vcl.androidx.compose.material)
 //    implementation(wings.androidx.compose.material3)
-    implementation(wings.androidx.compose.animation)
+    implementation(vcl.androidx.compose.animation)
 }
