@@ -1,5 +1,5 @@
-import wing.GroupIdMavenCentral
-import wing.publishMavenCentral
+import june.wing.GroupIdMavenCentral
+import june.wing.publishAndroidMavenCentral
 
 plugins {
     id("com.android.library")
@@ -14,7 +14,7 @@ android {
     namespace = "osp.sparkj.cubic"
 }
 
-publishMavenCentral("cubic", withSource = true)
+publishAndroidMavenCentral("cubic")
 
 dependencies {
     implementation(vcl.gene.cartoon)
