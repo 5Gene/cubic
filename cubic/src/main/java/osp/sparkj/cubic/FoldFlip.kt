@@ -7,14 +7,31 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.calculateTargetValue
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.splineBasedDecay
-import androidx.compose.foundation.gestures.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.horizontalDrag
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
@@ -25,7 +42,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import osp.sparkj.cartoon.curves.interval
 import osp.sparkj.cartoon.wings.alpha
-import osp.sparkj.cartoon.wings.todpf
+import osp.sparkj.cartoon.wings.dpf
 import osp.sparkj.cartoon.wings.transForm
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -40,89 +57,87 @@ import kotlin.math.roundToInt
 
 val transformTop = TransformOrigin(0.5f, 0f)
 
+@Composable
 internal fun Modifier.flipExpand(
     cardWidthFactor: Float = 0.95F,
     progress: Float = .2F,
     offset: Float? = null
-): Modifier =
-    composed {
-        val camera = remember { Camera() }
-        val blackColor = remember { Color.Black.toArgb() }
-        drawWithContent {
-            with(drawContext.canvas.nativeCanvas) {
-                val height = size.height
-                val topOffsetValue = (offset ?: (height / 4F)) * progress
-                val widthScaleValue = 1 - (1 - cardWidthFactor) * progress
+): Modifier {
+    val camera = remember { Camera() }
+    val blackColor = remember { Color.Black.toArgb() }
+    return drawWithContent {
+        with(drawContext.canvas.nativeCanvas) {
+            val height = size.height
+            val topOffsetValue = (offset ?: (height / 4F)) * progress
+            val widthScaleValue = 1 - (1 - cardWidthFactor) * progress
+            transForm(
+                translateY = -topOffsetValue,
+                scaleX = widthScaleValue,
+                clip = { offsetX, offsetY ->
+                    val top = progress.interval(.5F, 1F) / 2 * height
+                    clipRect(offsetX, top, -offsetX, -offsetY)
+                }) {
+                drawContent()
+            }
+            if (progress < 0.5) {
                 transForm(
                     translateY = -topOffsetValue,
                     scaleX = widthScaleValue,
+                    rotateX = -180F * progress,
+                    locationZ = (-30).dpf(),
+                    camera = camera,
                     clip = { offsetX, offsetY ->
-                        val top = progress.interval(.5F, 1F) / 2 * height
-                        clipRect(offsetX, top, -offsetX, -offsetY)
+                        clipRect(offsetX, offsetY, -offsetX, 0F)
                     }) {
                     drawContent()
-                }
-                if (progress < 0.5) {
-                    transForm(
-                        translateY = -topOffsetValue,
-                        scaleX = widthScaleValue,
-                        rotateX = -180F * progress,
-                        locationZ = (-30).todpf,
-                        camera = camera,
-                        clip = { offsetX, offsetY ->
-                            clipRect(offsetX, offsetY, -offsetX, 0F)
-                        }) {
-                        drawContent()
-                        if (progress > 0F) {
-                            drawColor(blackColor.alpha(.6 * progress))
-                        }
+                    if (progress > 0F) {
+                        drawColor(blackColor.alpha(.6 * progress))
                     }
                 }
             }
         }
     }
+}
 
 @SuppressLint("UnnecessaryComposedModifier")
 internal fun Modifier.flipHead(
     progress: Float = .2F,
     offset: Float
-): Modifier =
-    composed {
-        // progress > 1-0.5
-        val v = 1 - progress
-        // v > 0-0.5
-        val topOffsetValue = offset * v
-        drawWithContent {
-            with(drawContext.canvas) {
-                save()
-                //1-0.5    0-0.5
-                //0-size.height
-                val moving = size.height * v * 2
-                translate(0F, topOffsetValue + moving)
-                clipRect(0F, 0F, size.width, size.height - moving)
-                drawContent()
-                restore()
-            }
-        }.alpha(progress)
-    }
+): Modifier {
+    // progress > 1-0.5
+    val v = 1 - progress
+    // v > 0-0.5
+    val topOffsetValue = offset * v
+    return drawWithContent {
+        with(drawContext.canvas) {
+            save()
+            //1-0.5    0-0.5
+            //0-size.height
+            val moving = size.height * v * 2
+            translate(0F, topOffsetValue + moving)
+            clipRect(0F, 0F, size.width, size.height - moving)
+            drawContent()
+            restore()
+        }
+    }.alpha(progress)
+}
 
 @SuppressLint("UnnecessaryComposedModifier")
 internal fun Modifier.flipCard(
     progress: Float,
     offset: Float
-): Modifier =
-    composed {
-        // progress > 1-0.5
-        val v = 1 - progress
-        // v > 0-0.5
-        val topOffsetValue = offset * v
-        graphicsLayer {
-            rotationX = 180F * v
-            translationY = topOffsetValue
-            cameraDistance = 80F
-            transformOrigin = transformTop
-        }
+): Modifier {
+    // progress > 1-0.5
+    val v = 1 - progress
+    // v > 0-0.5
+    val topOffsetValue = offset * v
+    return graphicsLayer {
+        rotationX = 180F * v
+        translationY = topOffsetValue
+        cameraDistance = 80F
+        transformOrigin = transformTop
     }
+}
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -210,9 +225,11 @@ fun FoldFlip(
             onDragEnd = {
                 scope.launch {
                     scrollOffset = if (animate.value > .5) screenHeight else 0F
-                    animate.animateTo(if (animate.value > .5) 1F else 0F, animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                    ))
+                    animate.animateTo(
+                        if (animate.value > .5) 1F else 0F, animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                        )
+                    )
                     velocityTracker.resetTracking()
 //                    progress.animateTo(
 //                        (if (progress.value > .5) 1F else 0F),
