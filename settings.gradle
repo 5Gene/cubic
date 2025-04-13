@@ -10,6 +10,12 @@ plugins {
     id("io.github.5hmlA.vcl") version "25.04.13"
 }
 
+vcl {
+    onCreate { vb ->
+        vb.version("gene-cartoon", "1.1")
+    }
+}
+
 dependencyResolutionManagement {
     versionCatalogs {
         // declares an additional catalog, named 'testLibs', from the 'test-libs.versions.toml' file

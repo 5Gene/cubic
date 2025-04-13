@@ -38,10 +38,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import osp.sparkj.cartoon.curves.interval
-import osp.sparkj.cartoon.wings.alpha
-import osp.sparkj.cartoon.wings.dpf
-import osp.sparkj.cartoon.wings.transForm
+import osp.spark.cartoon.curves.interval
+import osp.spark.cartoon.wings.alpha
+import osp.spark.cartoon.wings.dpf
+import osp.spark.cartoon.wings.transForm
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 

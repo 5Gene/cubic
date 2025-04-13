@@ -14,8 +14,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.launch
-import osp.sparkj.cartoon.curves.interval
-import osp.sparkj.cartoon.wings.transForm
+import osp.spark.cartoon.curves.interval
+import osp.spark.cartoon.wings.transForm
 
 /**
  * @author yun.
