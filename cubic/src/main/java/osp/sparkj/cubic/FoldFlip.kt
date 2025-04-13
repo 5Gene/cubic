@@ -3,9 +3,9 @@ package osp.sparkj.cubic
 import android.annotation.SuppressLint
 import android.graphics.Camera
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.calculateTargetValue
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -119,7 +119,11 @@ internal fun Modifier.flipHead(
             drawContent()
             restore()
         }
-    }.alpha(progress)
+    }
+        .alpha(progress)
+        .graphicsLayer {
+            alpha = progress
+        }
 }
 
 @SuppressLint("UnnecessaryComposedModifier")
@@ -211,7 +215,7 @@ fun FoldFlip(
     val animate = remember { Animatable(1F) }
     val scope = rememberCoroutineScope()
     val screenHeight = LocalConfiguration.current.screenHeightDp.toFloat()
-    var scrollOffset by remember { mutableStateOf(if (animate.value > .5) screenHeight else 0F) }
+    var scrollOffset by remember { mutableFloatStateOf(if (animate.value > .5) screenHeight else 0F) }
 
     val modifier = Modifier.pointerInput(Unit) {
         val velocityTracker = VelocityTracker()
@@ -226,9 +230,11 @@ fun FoldFlip(
                 scope.launch {
                     scrollOffset = if (animate.value > .5) screenHeight else 0F
                     animate.animateTo(
-                        if (animate.value > .5) 1F else 0F, animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                        )
+                        if (animate.value > .5) 1F else 0F,
+                        animationSpec = tween(500, easing = LinearOutSlowInEasing)
+//                        animationSpec = spring(
+//                            dampingRatio = Spring.DampingRatioLowBouncy,
+//                        )
                     )
                     velocityTracker.resetTracking()
 //                    progress.animateTo(
