@@ -18,14 +18,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
@@ -60,15 +58,16 @@ val transformTop = TransformOrigin(0.5f, 0f)
 @Composable
 internal fun Modifier.flipExpand(
     cardWidthFactor: Float = 0.95F,
-    progress: Float = .2F,
-    offset: Float? = null
+    progressProvider: () -> Float = { .2F },
+    offsetProvider: (() -> Float)? = null
 ): Modifier {
     val camera = remember { Camera() }
     val blackColor = remember { Color.Black.toArgb() }
     return drawWithContent {
         with(drawContext.canvas.nativeCanvas) {
+            val progress = progressProvider()
             val height = size.height
-            val topOffsetValue = (offset ?: (height / 4F)) * progress
+            val topOffsetValue = (offsetProvider?.invoke() ?: (height / 4F)) * progress
             val widthScaleValue = 1 - (1 - cardWidthFactor) * progress
             transForm(
                 translateY = -topOffsetValue,
@@ -101,14 +100,17 @@ internal fun Modifier.flipExpand(
 
 @SuppressLint("UnnecessaryComposedModifier")
 internal fun Modifier.flipHead(
-    progress: Float = .2F,
-    offset: Float
+    progressProvider: () -> Float = { .2F },
+    offsetProvider: () -> Float
 ): Modifier {
-    // progress > 1-0.5
-    val v = 1 - progress
-    // v > 0-0.5
-    val topOffsetValue = offset * v
     return drawWithContent {
+        val progress = progressProvider()
+
+        // progress > 1-0.5
+        val v = 1 - progress
+        // v > 0-0.5
+        val topOffsetValue = offsetProvider() * v
+
         with(drawContext.canvas) {
             save()
             //1-0.5    0-0.5
@@ -119,23 +121,21 @@ internal fun Modifier.flipHead(
             drawContent()
             restore()
         }
+    }.graphicsLayer {
+        alpha = progressProvider()
     }
-        .alpha(progress)
-        .graphicsLayer {
-            alpha = progress
-        }
 }
 
 @SuppressLint("UnnecessaryComposedModifier")
 internal fun Modifier.flipCard(
-    progress: Float,
-    offset: Float
+    progressProvider: () -> Float,
+    offsetProvider: () -> Float
 ): Modifier {
-    // progress > 1-0.5
-    val v = 1 - progress
-    // v > 0-0.5
-    val topOffsetValue = offset * v
     return graphicsLayer {
+        // progress > 1-0.5
+        val v = 1 - progressProvider()
+        // v > 0-0.5
+        val topOffsetValue = offsetProvider() * v
         rotationX = 180F * v
         translationY = topOffsetValue
         cameraDistance = 80F
@@ -149,7 +149,7 @@ internal fun FoldFlip(
     modifier: Modifier = Modifier,
     headHeightFactor: Float = .23F,
     cardWidthFactor: Float = .877F,
-    progress: Float,
+    progress: () -> Float,
     expand: @Composable () -> Unit,
     head: @Composable () -> Unit,
     card: @Composable () -> Unit
@@ -157,43 +157,44 @@ internal fun FoldFlip(
     with(LocalDensity.current) {
         BoxWithConstraints(modifier = modifier.fillMaxSize()) {
             val headHeight = remember { maxHeight * headHeightFactor }
-            val offset = remember { (maxHeight / 2 - headHeight).toPx() }
+            val offset = { (maxHeight / 2 - headHeight).toPx() }
             val horizontalPadding = remember { (maxWidth * (1 - cardWidthFactor) / 2) }
-            if (progress < .9) {
+            val showExpand by remember { derivedStateOf { progress() < .9 } }
+            if (showExpand) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .flipExpand(
-                            progress = progress,
-                            offset = offset,
+                            progressProvider = progress,
+                            offsetProvider = offset,
                             cardWidthFactor = cardWidthFactor
                         )
                 ) {
                     expand()
                 }
             }
-
-            if (progress > .5) {
+            val showHead by remember { derivedStateOf { progress() > .5 } }
+            if (showHead) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = horizontalPadding)
                         .graphicsLayer {
-                            scaleX = 1 + (1 / cardWidthFactor - 1) * (1 - progress)
+                            scaleX = 1 + (1 / cardWidthFactor - 1) * (1 - progress())
                         }
                 ) {
 
                     Box(
                         modifier = Modifier
                             .height(headHeight)
-                            .flipHead(progress = progress, offset = offset)
+                            .flipHead(progressProvider = progress, offsetProvider = offset)
                     ) {
                         head()
                     }
 
                     Box(
                         modifier = Modifier
-                            .flipCard(progress = progress, offset = offset)
+                            .flipCard(progressProvider = progress, offsetProvider = offset)
                     ) {
                         card()
                     }
@@ -215,7 +216,7 @@ fun FoldFlip(
     val animate = remember { Animatable(1F) }
     val scope = rememberCoroutineScope()
     val screenHeight = LocalConfiguration.current.screenHeightDp.toFloat()
-    var scrollOffset by remember { mutableFloatStateOf(if (animate.value > .5) screenHeight else 0F) }
+    var scrollOffset = remember { (if (animate.value > .5) screenHeight else 0F) }
 
     val modifier = Modifier.pointerInput(Unit) {
         val velocityTracker = VelocityTracker()
@@ -263,9 +264,7 @@ fun FoldFlip(
         }
     }
 
-    val progress = animate.value
-
-    FoldFlip(modifier, headHeightFactor, cardWidthFactor, progress, expanded, head, card)
+    FoldFlip(modifier, headHeightFactor, cardWidthFactor, { animate.value }, expanded, head, card)
 }
 
 @SuppressLint("ReturnFromAwaitPointerEventScope")
