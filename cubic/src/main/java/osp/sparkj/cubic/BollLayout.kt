@@ -48,17 +48,17 @@ fun TestBollLayout() {
 
 @Composable
 fun BollLayout(content: @Composable @UiComposable () -> Unit) {
-    val offset = remember {
+    val offsetAnimatable = remember {
         Animatable(Offset.Zero, typeConverter = Offset.VectorConverter)
     }
     Box(
         modifier = Modifier
             .wrapContentSize()
             .background(color = Color.LightGray)
-            .touchWithVelocity(offset)
+            .touchWithVelocity(offsetAnimatable)
     ) {
-        val bollLayoutMeasurePolicy = remember(offset.value) {
-            bollLayoutMeasurePolicy(offset.value)
+        val bollLayoutMeasurePolicy = remember {
+            bollLayoutMeasurePolicy { offsetAnimatable.value }
         }
         Layout(content = content, measurePolicy = bollLayoutMeasurePolicy)
     }
@@ -144,7 +144,8 @@ class SphereCoordinate {
     }
 }
 
-fun bollLayoutMeasurePolicy(touch: Offset) = MeasurePolicy { measurables, constraints ->
+fun bollLayoutMeasurePolicy(touchProvider: () -> Offset) = MeasurePolicy { measurables, constraints ->
+    val touch = touchProvider()
     val side = constraints.maxWidth.coerceAtMost(constraints.maxHeight)
     val center = PointF(side / 2f, side / 2f)
     val bolls = mutableListOf<Boll>()

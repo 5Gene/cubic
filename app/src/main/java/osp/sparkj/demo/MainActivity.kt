@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import osp.sparkj.cubic.FoldFlip
+import osp.sparkj.cubic.PreviewTouch3D
 import osp.sparkj.demo.ui.theme.CubicTheme
 
 class MainActivity : ComponentActivity() {
@@ -29,7 +30,7 @@ class MainActivity : ComponentActivity() {
             CubicTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
-//                    PreviewTouch3D()
+                    PreviewTouch3D()
 //                    Box(modifier = Modifier.padding(30.dp)) {
 //                        Box(
 //                            modifier = Modifier
@@ -38,7 +39,7 @@ class MainActivity : ComponentActivity() {
 //                                .background(Color.Cyan)
 //                        )
 //                    }
-                    MiFloldflip()
+//                    MiFloldflip()
 //                    TestBollLayout()
                 }
             }
