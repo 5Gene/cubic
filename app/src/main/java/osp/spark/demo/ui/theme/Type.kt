@@ -1,4 +1,4 @@
-package osp.sparkj.demo.ui.theme
+package osp.spark.demo.ui.theme
 
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle

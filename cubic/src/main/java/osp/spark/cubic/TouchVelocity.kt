@@ -1,4 +1,4 @@
-package osp.sparkj.cubic
+package osp.spark.cubic
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector2D

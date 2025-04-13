@@ -11,7 +11,7 @@ group = GroupIdMavenCentral
 version = wings.versions.gene.cubic.get()
 
 android {
-    namespace = "osp.sparkj.cubic"
+    namespace = "osp.spark.cubic"
 }
 
 publishAndroidMavenCentral("cubic")

@@ -1,4 +1,4 @@
-package osp.sparkj.cubic
+package osp.spark.cubic
 
 import android.graphics.Camera
 import androidx.compose.animation.core.Animatable

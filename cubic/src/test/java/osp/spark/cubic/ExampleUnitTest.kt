@@ -1,4 +1,4 @@
-package osp.sparkj.demo
+package osp.spark.cubic
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

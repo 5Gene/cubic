@@ -1,4 +1,4 @@
-package osp.sparkj.cubic
+package osp.spark.cubic
 
 import android.graphics.PointF
 import androidx.compose.animation.core.Animatable
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +60,9 @@ fun BollLayout(content: @Composable @UiComposable () -> Unit) {
     ) {
         val bollLayoutMeasurePolicy = remember {
             bollLayoutMeasurePolicy { offsetAnimatable.value }
+        }
+        SideEffect {
+            println("BollLayout_Box_Layout")
         }
         Layout(content = content, measurePolicy = bollLayoutMeasurePolicy)
     }

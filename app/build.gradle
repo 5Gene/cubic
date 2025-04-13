@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace 'osp.sparkj.demo'
+    namespace 'osp.spark.demo'
 }
 
 dependencies {

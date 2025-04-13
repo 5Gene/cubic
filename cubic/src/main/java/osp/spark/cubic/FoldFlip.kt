@@ -1,4 +1,4 @@
-package osp.sparkj.cubic
+package osp.spark.cubic
 
 import android.annotation.SuppressLint
 import android.graphics.Camera
@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -33,7 +34,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.input.pointer.util.VelocityTracker
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.coroutineScope
@@ -145,126 +145,120 @@ internal fun Modifier.flipCard(
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-internal fun FoldFlip(
-    modifier: Modifier = Modifier,
-    headHeightFactor: Float = .23F,
-    cardWidthFactor: Float = .877F,
-    progress: () -> Float,
+fun FoldFlip(
+    headHeightFactor: Float = .2F,
+    cardWidthFactor: Float = .85F,
     expand: @Composable () -> Unit,
     head: @Composable () -> Unit,
     card: @Composable () -> Unit
 ) {
     with(LocalDensity.current) {
-        BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-            val headHeight = remember { maxHeight * headHeightFactor }
-            val offset = { (maxHeight / 2 - headHeight).toPx() }
-            val horizontalPadding = remember { (maxWidth * (1 - cardWidthFactor) / 2) }
-            val showExpand by remember { derivedStateOf { progress() < .9 } }
-            if (showExpand) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .flipExpand(
-                            progressProvider = progress,
-                            offsetProvider = offset,
-                            cardWidthFactor = cardWidthFactor
-                        )
-                ) {
-                    expand()
-                }
+        BoxWithConstraints {
+            val cardHeight = maxHeight
+            val cardWidth = maxWidth
+            val cardHeightPx = cardHeight.toPx()
+            val coroutineScope = rememberCoroutineScope()
+            val animate = remember { Animatable(1F) }
+            var scrollOffset = remember { (if (animate.value > .5) cardHeightPx else 0F) }
+            SideEffect {
+                println("FoldFlip_BoxWithConstraints: scrollOffset:$scrollOffset")
             }
-            val showHead by remember { derivedStateOf { progress() > .5 } }
-            if (showHead) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = horizontalPadding)
-                        .graphicsLayer {
-                            scaleX = 1 + (1 / cardWidthFactor - 1) * (1 - progress())
+            val modifier = Modifier.pointerInput(Unit) {
+                val velocityTracker = VelocityTracker()
+                detectDragGestures(
+                    onDragCancel = {
+                        coroutineScope.launch {
+                            scrollOffset = if (animate.value > .5) cardHeightPx else 0F
+                            animate.animateTo(if (animate.value > .5) 1F else 0F)
                         }
-                ) {
-
-                    Box(
-                        modifier = Modifier
-                            .height(headHeight)
-                            .flipHead(progressProvider = progress, offsetProvider = offset)
-                    ) {
-                        head()
+                    },
+                    onDragEnd = {
+                        coroutineScope.launch {
+                            scrollOffset = if (animate.value > .5) cardHeightPx else 0F
+                            animate.animateTo(
+                                if (animate.value > .5) 1F else 0F,
+                                animationSpec = tween(500, easing = LinearOutSlowInEasing)
+                            )
+                            //animatable.animateDecay(Offset(velocity.x, velocity.y), exponentialDecay())
+                            velocityTracker.resetTracking()
+                        }
+                    },
+                ) { change, dragAmount ->
+                    if (!animate.isRunning) {
+                        velocityTracker.addPosition(
+                            change.uptimeMillis,
+                            change.position
+                        )
+                        //展开->折叠的时候向下滑动，折叠起来，此时 velocity 为正值
+                        //折叠->展开的时候向上滑动，展开，此时 velocity 为负值
+//                        val velocity = velocityTracker.calculateVelocity().y
+//                        println("FoldFlip_FoldFlip ======= velocity $velocity")
+                        change.consume()
+                        coroutineScope.launch {
+                            scrollOffset += dragAmount.y
+                            animate.snapTo((scrollOffset / cardHeightPx).coerceIn(0F, 1F))
+                        }
                     }
+                }
+            }
 
+            Box(modifier = modifier.fillMaxSize()) {
+                val headHeight = remember { cardHeight * headHeightFactor }
+                val offset = remember { { (cardHeight / 2 - headHeight).toPx() } }
+                val horizontalPadding = remember { (cardWidth * (1 - cardWidthFactor) / 2) }
+                val showExpand by remember { derivedStateOf { animate.value < .9 } }
+                val showHead by remember { derivedStateOf { animate.value > .5 } }
+                println("FoldFlip_BoxWithConstraints_Box: showExpand=$showExpand, showHead=$showHead, hPadding:$horizontalPadding")
+                if (showExpand) {
                     Box(
                         modifier = Modifier
-                            .flipCard(progressProvider = progress, offsetProvider = offset)
+                            .fillMaxSize()
+                            .flipExpand(
+                                progressProvider = { animate.value },
+                                offsetProvider = offset,
+                                cardWidthFactor = cardWidthFactor
+                            )
                     ) {
-                        card()
+                        SideEffect {
+                            println("FoldFlip_FoldFlip_Box_expand: $showExpand")
+                        }
+                        expand()
+                    }
+                }
+                if (showHead) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = horizontalPadding)
+                            .graphicsLayer {
+                                scaleX = 1 + (1 / cardWidthFactor - 1) * (1 - animate.value)
+                            }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(headHeight)
+                                .flipHead(progressProvider = { animate.value }, offsetProvider = offset)
+                        ) {
+                            SideEffect {
+                                println("FoldFlip_FoldFlip_Box_head: $showHead")
+                            }
+                            head()
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .flipCard(progressProvider = { animate.value }, offsetProvider = offset)
+                        ) {
+                            SideEffect {
+                                println("FoldFlip_FoldFlip_Box_card: $showHead")
+                            }
+                            card()
+                        }
                     }
                 }
             }
         }
     }
-}
-
-@Composable
-fun FoldFlip(
-    headHeightFactor: Float = .20F,
-    cardWidthFactor: Float = .85F,
-    expanded: @Composable () -> Unit,
-    head: @Composable () -> Unit,
-    card: @Composable () -> Unit
-) {
-
-    val animate = remember { Animatable(1F) }
-    val scope = rememberCoroutineScope()
-    val screenHeight = LocalConfiguration.current.screenHeightDp.toFloat()
-    var scrollOffset = remember { (if (animate.value > .5) screenHeight else 0F) }
-
-    val modifier = Modifier.pointerInput(Unit) {
-        val velocityTracker = VelocityTracker()
-        detectDragGestures(
-            onDragCancel = {
-                scope.launch {
-                    scrollOffset = if (animate.value > .5) screenHeight else 0F
-                    animate.animateTo(if (animate.value > .5) 1F else 0F)
-                }
-            },
-            onDragEnd = {
-                scope.launch {
-                    scrollOffset = if (animate.value > .5) screenHeight else 0F
-                    animate.animateTo(
-                        if (animate.value > .5) 1F else 0F,
-                        animationSpec = tween(500, easing = LinearOutSlowInEasing)
-//                        animationSpec = spring(
-//                            dampingRatio = Spring.DampingRatioLowBouncy,
-//                        )
-                    )
-                    velocityTracker.resetTracking()
-//                    progress.animateTo(
-//                        (if (progress.value > .5) 1F else 0F),
-//                        animationSpec = spring(
-//                            stiffness = Spring.StiffnessHigh,
-//                            visibilityThreshold = Spring.StiffnessMedium
-//                        )
-//                    )
-                }
-            },
-        ) { change, dragAmount ->
-            if (!animate.isRunning) {
-                velocityTracker.addPosition(
-                    change.uptimeMillis,
-                    change.position
-                )
-                val velocity = velocityTracker.calculateVelocity().y
-                println("============= velocity $velocity")
-                change.consume()
-                scope.launch {
-                    scrollOffset += dragAmount.y
-                    animate.snapTo((scrollOffset / screenHeight).coerceIn(0F, 1F))
-                }
-            }
-        }
-    }
-
-    FoldFlip(modifier, headHeightFactor, cardWidthFactor, { animate.value }, expanded, head, card)
 }
 
 @SuppressLint("ReturnFromAwaitPointerEventScope")
