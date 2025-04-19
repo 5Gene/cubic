@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace 'osp.spark.demo'
+    namespace 'osp.spark.cubic'
 }
 
 dependencies {
