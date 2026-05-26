@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace 'osp.spark.cubic'
+    namespace 'osp.spark.cubic.app'
 }
 
 dependencies {
